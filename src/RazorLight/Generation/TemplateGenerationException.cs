@@ -10,6 +10,6 @@ namespace RazorLight.Generation
             Diagnostics = diagnostic;
         }
 
-        public IReadOnlyList<RazorDiagnostic> Diagnostics { get; set; }
+        private IReadOnlyList<RazorDiagnostic> Diagnostics { get; set; }
     }
 }

@@ -18,8 +18,8 @@ namespace RazorLight.Compilation
 	{
 		private readonly object _cacheLock = new object();
 
-		private RazorSourceGenerator _razorSourceGenerator;
-		private RoslynCompilationService _compiler;
+		private readonly RazorSourceGenerator _razorSourceGenerator;
+		private readonly RoslynCompilationService _compiler;
 
 		private readonly RazorLightOptions _razorLightOptions;
 		private readonly RazorLightProject _razorProject;
@@ -73,7 +73,7 @@ namespace RazorLight.Compilation
 				return cachedResult;
 			}
 
-			string normalizedPath = GetNormalizedKey(templateKey);
+			var normalizedPath = GetNormalizedKey(templateKey);
 			if (_cache.TryGetValue(normalizedPath, out cachedResult))
 			{
 				return cachedResult;
@@ -95,7 +95,7 @@ namespace RazorLight.Compilation
 			// actual work for compiling files happens outside the critical section.
 			lock (_cacheLock)
 			{
-				string normalizedKey = GetNormalizedKey(templateKey);
+				var normalizedKey = GetNormalizedKey(templateKey);
 
 				// Double-checked locking to handle a possible race.
 				if (_cache.TryGetValue(normalizedKey, out Task<CompiledTemplateDescriptor> result))
@@ -103,33 +103,26 @@ namespace RazorLight.Compilation
 					return result;
 				}
 
-				if (_precompiledViews.TryGetValue(normalizedKey, out var precompiledView))
-				{
-					item = null;
-					//item = CreatePrecompiledWorkItem(normalizedKey, precompiledView);
-				}
-				else
-				{
-					item = CreateRuntimeCompilationWorkItem(templateKey).GetAwaiter().GetResult();
-				}
+				item = _precompiledViews.TryGetValue(normalizedKey, out var precompiledView) ? null 
+					: CreateRuntimeCompilationWorkItem(templateKey).GetAwaiter().GetResult();
 
 				// At this point, we've decided what to do - but we should create the cache entry and
 				// release the lock first.
 				cacheEntryOptions = new MemoryCacheEntryOptions();
-				if(item.ExpirationToken != null)
+				if(item?.ExpirationToken != null)
 				{
 					cacheEntryOptions.ExpirationTokens.Add(item.ExpirationToken);
 				}
 
 				taskSource = new TaskCompletionSource<CompiledTemplateDescriptor>();
-				if (item.SupportsCompilation)
+				if (item != null && item.SupportsCompilation)
 				{
 					// We'll compile in just a sec, be patient.
 				}
 				else
 				{
 					// If we can't compile, we should have already created the descriptor
-					Debug.Assert(item.Descriptor != null);
+					Debug.Assert(item?.Descriptor != null);
 					taskSource.SetResult(item.Descriptor);
 				}
 
@@ -140,16 +133,6 @@ namespace RazorLight.Compilation
 			if (item.SupportsCompilation)
 			{
 				Debug.Assert(taskSource != null);
-
-				//if (item.Descriptor?.Item != null &&
-				//	ChecksumValidator.IsItemValid(_projectEngine, item.Descriptor.Item))
-				//{
-				//	// If the item has checksums to validate, we should also have a precompiled view.
-				//	Debug.Assert(item.Descriptor != null);
-
-				//	taskSource.SetResult(item.Descriptor);
-				//	return taskSource.Task;
-				//}
 
 				try
 				{
@@ -230,16 +213,14 @@ namespace RazorLight.Compilation
 				return templateKey;
 			}
 
-			if (!_normalizedKeysCache.TryGetValue(templateKey, out var normalizedPath))
-			{
-				normalizedPath = NormalizeKey(templateKey);
-				_normalizedKeysCache[templateKey] = normalizedPath;
-			}
+			if (_normalizedKeysCache.TryGetValue(templateKey, out var normalizedPath)) return normalizedPath;
+			normalizedPath = NormalizeKey(templateKey);
+			_normalizedKeysCache[templateKey] = normalizedPath;
 
 			return normalizedPath;
 		}
 
-		protected string NormalizeKey(string templateKey)
+		private string NormalizeKey(string templateKey)
 		{
 			if(!(_razorProject is FileSystemRazorProject))
 			{
@@ -266,9 +247,9 @@ namespace RazorLight.Compilation
 				builder.Append('/');
 			}
 
-			for (var i = 0; i < templateKey.Length; i++)
+			foreach (var t in templateKey)
 			{
-				var ch = templateKey[i];
+				var ch = t;
 				if (ch == '\\')
 				{
 					ch = '/';

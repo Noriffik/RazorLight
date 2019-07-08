@@ -32,7 +32,7 @@ namespace RazorLight.Extensions
                 .GetCustomAttributes(typeof(CompilerGeneratedAttribute), false)
                 .Any();
 
-            bool nameContainsAnonymousType = type.FullName.Contains("AnonymousType");
+            bool nameContainsAnonymousType = type.FullName != null && type.FullName.Contains("AnonymousType");
             bool isAnonymousType = hasCompilerGeneratedAttribute && nameContainsAnonymousType;
 
             return isAnonymousType;

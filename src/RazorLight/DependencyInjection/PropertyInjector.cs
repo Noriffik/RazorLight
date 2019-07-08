@@ -9,18 +9,13 @@ namespace RazorLight.DependencyInjection
 {
 	public class PropertyInjector
 	{
-		private readonly IServiceProvider services;
+		private readonly IServiceProvider _services;
 		private readonly ConcurrentDictionary<PropertyInfo, FastPropertySetter> _propertyCache;
 
 		public PropertyInjector(IServiceProvider services)
 		{
-			if (services == null)
-			{
-				throw new ArgumentNullException(nameof(services));
-			}
-
-			this.services = services;
-			this._propertyCache = new ConcurrentDictionary<PropertyInfo, FastPropertySetter>();
+			_services = services ?? throw new ArgumentNullException(nameof(services));
+			_propertyCache = new ConcurrentDictionary<PropertyInfo, FastPropertySetter>();
 		}
 
 		public void Inject(ITemplatePage page)
@@ -30,27 +25,23 @@ namespace RazorLight.DependencyInjection
 				throw new ArgumentNullException(nameof(page));
 			}
 
-			PropertyInfo[] properties = page.GetType().GetRuntimeProperties()
-			   .Where(p =>
-			   {
-				   return
-					   p.IsDefined(typeof(RazorInjectAttribute)) &&
-					   p.GetIndexParameters().Length == 0 &&
-					   !p.SetMethod.IsStatic;
-			   }).ToArray();
+			var properties = page.GetType().GetRuntimeProperties()
+			   .Where(p => p.IsDefined(typeof(RazorInjectAttribute)) &&
+			               p.GetIndexParameters().Length == 0 &&
+			               !p.SetMethod.IsStatic).ToArray();
 
-			var scopeFactory = services.GetRequiredService<IServiceScopeFactory>();
+			var scopeFactory = _services.GetRequiredService<IServiceScopeFactory>();
 
-			using (IServiceScope scope = scopeFactory.CreateScope())
+			using (var scope = scopeFactory.CreateScope())
 			{
-				IServiceProvider scopeServices = scope.ServiceProvider;
+				var scopeServices = scope.ServiceProvider;
 
 				foreach (var property in properties)
 				{
-					Type memberType = property.PropertyType;
-					object instance = scopeServices.GetRequiredService(memberType);
+					var memberType = property.PropertyType;
+					var instance = scopeServices.GetRequiredService(memberType);
 
-					FastPropertySetter setter = _propertyCache.GetOrAdd(property, new FastPropertySetter(property));
+					var setter = _propertyCache.GetOrAdd(property, new FastPropertySetter(property));
 					setter.SetValue(page, instance);
 				}
 			}

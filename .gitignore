@@ -4,6 +4,7 @@ TestResults/
 .nuget/
 .build/
 .testPublish/
+.idea/
 *.sln.ide/
 _ReSharper.*/
 packages/

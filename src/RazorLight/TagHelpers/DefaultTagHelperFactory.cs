@@ -24,12 +24,7 @@ namespace RazorLight.TagHelpers
         /// </param>
         public DefaultTagHelperFactory(ITagHelperActivator activator)
         {
-            if (activator == null)
-            {
-                throw new ArgumentNullException(nameof(activator));
-            }
-
-            _activator = activator;
+            _activator = activator ?? throw new ArgumentNullException(nameof(activator));
             _injectActions = new ConcurrentDictionary<Type, PropertyActivator<PageContext>[]>();
 
             //TODO: ViewContext attribute

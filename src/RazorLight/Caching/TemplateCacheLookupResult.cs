@@ -13,7 +13,7 @@ namespace RazorLight.Caching
             Success = true;
         }
 
-        public TemplateCacheItem Template { get; set; }
+        public TemplateCacheItem Template { get; private set; }
 
         public bool Success { get; }
     }

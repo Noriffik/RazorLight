@@ -13,7 +13,7 @@ namespace RazorLight.Compilation
     public class DefaultMetadataReferenceManager : IMetadataReferenceManager
     {
         public HashSet<MetadataReference> AdditionalMetadataReferences { get; }
-        public HashSet<string> ExcludedAssemblies { get; }
+        public HashSet<string> ExcludedAssemblies { get; private set; }
 
         public DefaultMetadataReferenceManager()
         {
@@ -40,7 +40,7 @@ namespace RazorLight.Compilation
             return Resolve(assembly, dependencyContext);
         }
 
-        internal IReadOnlyList<MetadataReference> Resolve(Assembly assembly, DependencyContext dependencyContext)
+        private IReadOnlyList<MetadataReference> Resolve(Assembly assembly, DependencyContext dependencyContext)
         {
             var libraryPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             IEnumerable<string> references = null;
@@ -48,7 +48,7 @@ namespace RazorLight.Compilation
             {
                 var context = new HashSet<string>();
                 var x = GetReferencedAssemblies(assembly, ExcludedAssemblies, context).Union(new Assembly[] { assembly }).ToArray();
-                references = x.Select(p => AssemblyDirectory(p));
+                references = x.Select(AssemblyDirectory);
             }
             else
             {
@@ -61,7 +61,7 @@ namespace RazorLight.Compilation
                 }
             }
 
-            var metadataRerefences = new List<MetadataReference>();
+            var metadataReferences = new List<MetadataReference>();
 
             foreach (var reference in references)
             {
@@ -72,17 +72,17 @@ namespace RazorLight.Compilation
                         var moduleMetadata = ModuleMetadata.CreateFromStream(stream, PEStreamOptions.PrefetchMetadata);
                         var assemblyMetadata = AssemblyMetadata.Create(moduleMetadata);
 
-                        metadataRerefences.Add(assemblyMetadata.GetReference(filePath: reference));
+                        metadataReferences.Add(assemblyMetadata.GetReference(filePath: reference));
                     }
                 }
             }
 
             if (AdditionalMetadataReferences.Any())
             {
-                metadataRerefences.AddRange(AdditionalMetadataReferences);
+                metadataReferences.AddRange(AdditionalMetadataReferences);
             }
 
-            return metadataRerefences;
+            return metadataReferences;
         }
 
         private static IEnumerable<Assembly> GetReferencedAssemblies(Assembly a, IEnumerable<string> excludedAssemblies, HashSet<string> visitedAssemblies = null)

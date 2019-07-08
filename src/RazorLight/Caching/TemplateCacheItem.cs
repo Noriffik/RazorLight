@@ -7,12 +7,12 @@ namespace RazorLight.Caching
         /// <summary>
         /// Gets unique template key
         /// </summary>
-        public string Key { get; set; }
+        public string Key { get; private set; }
 
         /// <summary>
         /// Gets the <see cref="ITemplatePage"/> factory
         /// </summary>
-        public Func<ITemplatePage> TemplatePageFactory { get; set; }
+        public Func<ITemplatePage> TemplatePageFactory { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of <see cref="TemplateCacheItem"/>.

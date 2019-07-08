@@ -5,23 +5,18 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyModel;
-using Microsoft.Extensions.Options;
 using RazorLight.Generation;
 using RazorLight.Internal;
-using RazorLight.Razor;
 using DependencyContextCompilationOptions = Microsoft.Extensions.DependencyModel.CompilationOptions;
 
 namespace RazorLight.Compilation
 {
-	public class RoslynCompilationService : ICompilationService
+	public sealed class RoslynCompilationService : ICompilationService
 	{
 		private readonly IMetadataReferenceManager metadataReferenceManager;
 		private readonly bool isDevelopment;
@@ -43,15 +38,9 @@ namespace RazorLight.Compilation
 
 		#region Options
 
-		public virtual Assembly OperatingAssembly
-		{
-			get
-			{
-				return operatingAssembly;
-			}
-		}
-		public virtual EmitOptions EmitOptions { get; }
-		public virtual CSharpCompilationOptions CSharpCompilationOptions
+		public Assembly OperatingAssembly => operatingAssembly;
+		public EmitOptions EmitOptions { get; }
+		public CSharpCompilationOptions CSharpCompilationOptions
 		{
 			get
 			{
@@ -59,7 +48,7 @@ namespace RazorLight.Compilation
 				return _compilationOptions;
 			}
 		}
-		public virtual CSharpParseOptions ParseOptions
+		public CSharpParseOptions ParseOptions
 		{
 			get
 			{
@@ -80,16 +69,14 @@ namespace RazorLight.Compilation
 		{
 			lock(locker)
 			{
-				if (!_optionsInitialized)
-				{
-					var dependencyContextOptions = GetDependencyContextCompilationOptions();
-					_parseOptions = GetParseOptions(dependencyContextOptions);
-					_compilationOptions = GetCompilationOptions(dependencyContextOptions);
+				if (_optionsInitialized) return;
+				var dependencyContextOptions = GetDependencyContextCompilationOptions();
+				_parseOptions = GetParseOptions(dependencyContextOptions);
+				_compilationOptions = GetCompilationOptions(dependencyContextOptions);
 
-					metadataReferences.AddRange(metadataReferenceManager.Resolve(OperatingAssembly));
+				metadataReferences.AddRange(metadataReferenceManager.Resolve(OperatingAssembly));
 
-					_optionsInitialized = true;
-				}
+				_optionsInitialized = true;
 			}
 		}
 
@@ -146,7 +133,7 @@ namespace RazorLight.Compilation
 			}
 		}
 
-		protected internal virtual DependencyContextCompilationOptions GetDependencyContextCompilationOptions()
+		private DependencyContextCompilationOptions GetDependencyContextCompilationOptions()
 		{
 			var dependencyContext = DependencyContext.Load(OperatingAssembly);
 
@@ -166,10 +153,6 @@ namespace RazorLight.Compilation
 			CSharpCompilation compilation = CreateCompilation(assemblyName).AddSyntaxTrees(syntaxTree);
 
 			compilation = ExpressionRewriter.Rewrite(compilation);
-
-			//var compilationContext = new RoslynCompilationContext(compilation);
-			//_compilationCallback(compilationContext);
-			//compilation = compilationContext.Compilation;
 			return compilation;
 		}
 
@@ -240,7 +223,7 @@ namespace RazorLight.Compilation
 
 			if (!string.IsNullOrEmpty(dependencyContextOptions.LanguageVersion))
 			{
-				if (LanguageVersionFacts.TryParse(dependencyContextOptions.LanguageVersion, out var languageVersion))
+				if (dependencyContextOptions.LanguageVersion.TryParse(out var languageVersion))
 				{
 					parseOptions = parseOptions.WithLanguageVersion(languageVersion);
 				}

@@ -8,18 +8,8 @@ namespace RazorLight.Generation
     {
         public GeneratedRazorTemplate(RazorLightProjectItem projectItem, RazorCSharpDocument cSharpDocument)
         {
-            if(projectItem == null)
-            {
-                throw new ArgumentNullException(nameof(projectItem));
-            }
-
-            if (cSharpDocument == null)
-            {
-                throw new ArgumentNullException(nameof(cSharpDocument));
-            }
-
-            ProjectItem = projectItem;
-            CSharpDocument = cSharpDocument;
+            ProjectItem = projectItem ?? throw new ArgumentNullException(nameof(projectItem));
+            CSharpDocument = cSharpDocument ?? throw new ArgumentNullException(nameof(cSharpDocument));
         }
 
         public RazorLightProjectItem ProjectItem { get; set; }

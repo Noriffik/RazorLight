@@ -13,7 +13,7 @@ namespace RazorLight.Caching
             LookupCache = new MemoryCache(cacheOptions);
         }
 
-        protected IMemoryCache LookupCache { get; set; }
+        private IMemoryCache LookupCache { get; set; }
 
         public TemplateCacheLookupResult RetrieveTemplate(string key)
         {

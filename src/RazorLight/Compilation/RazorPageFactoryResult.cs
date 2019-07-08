@@ -19,8 +19,8 @@ namespace RazorLight.Compilation
             TemplatePageFactory = templatePageFactory;
         }
 
-        public CompiledTemplateDescriptor TemplateDescriptor { get; }
+        public CompiledTemplateDescriptor TemplateDescriptor { get; private set; }
 
-        public Func<ITemplatePage> TemplatePageFactory { get; }
+        public Func<ITemplatePage> TemplatePageFactory { get; private set; }
     }
 }

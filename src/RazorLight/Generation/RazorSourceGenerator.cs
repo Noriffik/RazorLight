@@ -127,27 +127,23 @@ namespace RazorLight.Generation
         /// <returns>The sequence of applicable <see cref="RazorSourceDocument"/>.</returns>
         public virtual async Task<IEnumerable<RazorSourceDocument>> GetImportsAsync(RazorLightProjectItem projectItem)
         {
-            if (projectItem == null)
+            switch (projectItem)
             {
-                throw new ArgumentNullException(nameof(projectItem));
+                case null:
+                    throw new ArgumentNullException(nameof(projectItem));
+                case TextSourceRazorProjectItem _:
+                    return Enumerable.Empty<RazorSourceDocument>();
             }
 
-			if (projectItem is TextSourceRazorProjectItem)
-			{
-				return Enumerable.Empty<RazorSourceDocument>();
-			}
-
-			var result = new List<RazorSourceDocument>();
+            var result = new List<RazorSourceDocument>();
 
             IEnumerable<RazorLightProjectItem> importProjectItems = await Project.GetImportsAsync(projectItem.Key);
             foreach (var importItem in importProjectItems)
             {
-                if (importItem.Exists)
+                if (!importItem.Exists) continue;
+                using (var stream = importItem.Read())
                 {
-                    using (var stream = importItem.Read())
-                    {
-                        result.Insert(0, RazorSourceDocument.ReadFrom(stream, null));
-                    }
+                    result.Insert(0, RazorSourceDocument.ReadFrom(stream, null));
                 }
             }
 
@@ -168,7 +164,7 @@ namespace RazorLight.Generation
             return result;
         }
 
-        internal protected RazorSourceDocument GetDefaultImports()
+        private RazorSourceDocument GetDefaultImports()
         {
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream, Encoding.UTF8))
@@ -185,7 +181,7 @@ namespace RazorLight.Generation
             }
         }
 
-		internal protected RazorSourceDocument GetNamespacesImports()
+        private RazorSourceDocument GetNamespacesImports()
 		{
 			using (var stream = new MemoryStream())
 			using (var writer = new StreamWriter(stream, Encoding.UTF8))
@@ -208,15 +204,6 @@ namespace RazorLight.Generation
             yield return "@using System.Collections.Generic";
             yield return "@using System.Linq";
             yield return "@using System.Threading.Tasks";
-
-            //"@inject global::Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper<TModel> Html");
-            //"@inject global::Microsoft.AspNetCore.Mvc.Rendering.IJsonHelper Json");
-            //"@inject global::Microsoft.AspNetCore.Mvc.IViewComponentHelper Component");
-            //"@inject global::Microsoft.AspNetCore.Mvc.IUrlHelper Url");
-            //"@inject global::Microsoft.AspNetCore.Mvc.ViewFeatures.IModelExpressionProvider ModelExpressionProvider");
-            //"@addTagHelper Microsoft.AspNetCore.Mvc.Razor.TagHelpers.UrlResolutionTagHelper, Microsoft.AspNetCore.Mvc.Razor");
-            //"@addTagHelper Microsoft.AspNetCore.Mvc.Razor.TagHelpers.HeadTagHelper, Microsoft.AspNetCore.Mvc.Razor");
-            //"@addTagHelper Microsoft.AspNetCore.Mvc.Razor.TagHelpers.BodyTagHelper, Microsoft.AspNetCore.Mvc.Razor");
         }
     }
 }

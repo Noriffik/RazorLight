@@ -15,7 +15,7 @@ namespace RazorLight.Sandbox
 				.UseEmbeddedResourcesProject(typeof(Program))
 				.Build();
 
-			string result = await engine.CompileRenderAsync("Views.Subfolder.A", null, null, null);
+			var result = await engine.CompileRenderAsync("Views.Subfolder.A", null);
 			Console.WriteLine(result);
 
 			Console.WriteLine("Finished");
